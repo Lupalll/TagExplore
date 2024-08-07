@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to TagExplore</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+        .success-message {
+            display: none;
+            color: green;
+        }
+        li {
+            display: flex;
+            align-items: center;
+        }
+        form {
+            margin-left: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to TagExplore</h1>
+    <div class="success-message" id="successMessage"></div>
+    <ul>
+        <?php
+            $servername = "localhost";
+            $username = "root";
+            $password = "";
+            $database = "TagExplore";
+
+            // Verbindung herstellen
+            $conn = mysqli_connect($servername, $username, $password, $database);
+
+            // Überprüfen der Verbindung
+            if (!$conn) {
+                die("Connection failed: " . mysqli_connect_error());
+            }
+
+            // Wenn das Formular abgeschickt wurde und 'delete' im POST enthalten ist
+            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete'])) {
+                $description = $_POST['description'];
+
+                // SQL-Befehl zum Löschen des Eintrags mit der angegebenen Beschreibung
+                $sql = "DELETE FROM Tags WHERE id=(SELECT id FROM Tags WHERE description='$description' LIMIT 1);";
+
+                if (mysqli_query($conn, $sql)) {
+                    echo "<script>document.getElementById('successMessage').innerText = 'Eintrag erfolgreich gelöscht.'; document.getElementById('successMessage').style.display = 'block'; setTimeout(function(){ document.getElementById('successMessage').style.display = 'none'; }, 3000);</script>";
+                } else {
+                    echo "<p>Fehler beim Löschen des Eintrags: " . mysqli_error($conn) . "</p>";
+                }
+            }
+
+            // SQL-Abfrage, um die Tags aus der Datenbank zu erhalten
+            $sql = "SELECT COUNT(*) as Anzahl, description FROM Tags GROUP BY description";
+            $result = mysqli_query($conn, $sql);
+
+            // Anzeigen der Ergebnisse in einer Liste
+            if (mysqli_num_rows($result) > 0) {
+                while($row = mysqli_fetch_assoc($result)) {
+                    echo "<li>Anzahl: " . $row["Anzahl"]. " - Description: " . $row["description"]. "
+                        <form method='post'>
+                            <input type='hidden' name='description' value='" . $row["description"] . "'>
+                            <button type='submit' name='delete'>Löschen</button>
+                        </form>
+                    </li>";
+                }
+            } else {
+                echo "<li>0 results</li>";
+            }
+
+            // Schließen der Verbindung
+            mysqli_close($conn);
+        ?>
+    </ul>
+</body>
+</html>
